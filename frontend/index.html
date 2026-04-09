@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Group Matcher - Find Your Perfect Study Partner</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Study Group Matcher</h1>
+            <p>Find your perfect study partner based on courses, topics, and availability!</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav id="navigation" style="display:none;">
+            <button class="tab-btn active" onclick="showSection('dashboard')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="showSection('matches')">✨ Matches</button>
+            <button class="tab-btn" onclick="showSection('requests')">📨 Requests <span id="request-count" class="badge" style="display:none;">0</span></button>
+            <button class="tab-btn" onclick="showSection('groups')">👥 Groups</button>
+            <button class="tab-btn" onclick="showSection('students')">🔍 Browse Students</button>
+            <button class="tab-btn" onclick="showSection('ai-assistant')">🤖 AI Assistant</button>
+            <button class="tab-btn" onclick="logout()">🚪 Logout</button>
+        </nav>
+
+        <!-- Registration Section -->
+        <section id="registration">
+            <h2>Register to Find Study Partners</h2>
+            
+            <!-- Toggle between Register and Login -->
+            <div class="auth-toggle">
+                <button id="show-register-btn" class="btn-primary active" onclick="showRegisterForm()">Register</button>
+                <button id="show-login-btn" class="btn-secondary" onclick="showLoginForm()">Login</button>
+            </div>
+            
+            <!-- Registration Form -->
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" placeholder="e.g., John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="At least 6 characters" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="course">Course Code</label>
+                    <input type="text" id="course" placeholder="e.g., CS101, MATH201" required>
+                </div>
+                <div class="form-group">
+                    <label for="topics">Topics of Interest (comma-separated)</label>
+                    <input type="text" id="topics" placeholder="e.g., Python,Algorithms,Web Development">
+                </div>
+                <div class="form-group">
+                    <label for="availability">Availability (Day Start-End, comma-separated)</label>
+                    <input type="text" id="availability" placeholder="e.g., Mon 10-12,Wed 14-16,Fri 10-12">
+                </div>
+                <div class="form-group">
+                    <label for="telegram_id">Telegram Chat ID (optional, for notifications)</label>
+                    <input type="text" id="telegram_id" placeholder="Get it from @userinfobot on Telegram">
+                </div>
+                <button type="submit" class="btn-primary">Register & Find Partners</button>
+            </form>
+            
+            <!-- Login Form -->
+            <form id="loginForm" style="display:none;">
+                <div class="form-group">
+                    <label for="login-name">Full Name</label>
+                    <input type="text" id="login-name" placeholder="e.g., John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Your password" required>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+                <p id="login-error" class="error-message" style="display:none; margin-top: 15px;"></p>
+            </form>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" style="display:none;">
+            <h2>📊 Dashboard</h2>
+            <div id="student-profile" class="profile-card"></div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>👥 Total Students</h3>
+                    <p id="stat-students">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>🎯 Study Groups</h3>
+                    <p id="stat-groups">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>📨 Pending Requests</h3>
+                    <p id="stat-requests">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Matches Section -->
+        <section id="matches" style="display:none;">
+            <h2>✨ Your Best Matches</h2>
+            <p class="subtitle">Students are ranked by compatibility based on course, topics, and availability</p>
+            <div id="matches-list"></div>
+        </section>
+
+        <!-- Requests Section -->
+        <section id="requests" style="display:none;">
+            <h2>📨 Match Requests</h2>
+            <div id="requests-list"></div>
+        </section>
+
+        <!-- Groups Section -->
+        <section id="groups" style="display:none;">
+            <h2>👥 Your Study Groups</h2>
+            <div id="groups-list"></div>
+        </section>
+
+        <!-- Browse Students Section -->
+        <section id="students" style="display:none;">
+            <h2>🔍 Browse All Students</h2>
+            <div class="search-bar">
+                <input type="text" id="search-course" placeholder="Search by course (e.g., CS101)">
+                <button onclick="searchStudents()" class="btn-primary">Search</button>
+            </div>
+            <div id="students-list"></div>
+        </section>
+
+        <!-- AI Assistant Section -->
+        <section id="ai-assistant" style="display:none;">
+            <h2>🤖 AI Study Assistant</h2>
+            <p class="subtitle">Ask me anything about study groups, matching, or study tips!</p>
+            <div id="chat-messages"></div>
+            <form id="chat-form">
+                <input type="text" id="chat-input" placeholder="Ask me anything about study groups...">
+                <button type="submit" class="btn-primary">Send</button>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        let currentStudentId = null;
+        let currentStudent = null;
+
+        // Helper function for API calls
+        async function apiCall(url, options = {}) {
+            const response = await fetch(url, {
+                headers: { 'Content-Type': 'application/json' },
+                ...options
+            });
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({detail: 'Unknown error'}));
+                throw new Error(error.detail || 'Request failed');
+            }
+            return response.json();
+        }
+
+        // Show/hide forms
+        function showRegisterForm() {
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('show-register-btn').classList.add('active');
+            document.getElementById('show-login-btn').classList.remove('active');
+        }
+
+        function showLoginForm() {
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('show-login-btn').classList.add('active');
+            document.getElementById('show-register-btn').classList.remove('active');
+            document.getElementById('login-error').style.display = 'none';
+        }
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loginData = {
+                name: document.getElementById('login-name').value,
+                password: document.getElementById('login-password').value
+            };
+
+            try {
+                const result = await apiCall('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify(loginData)
+                });
+
+                if (!result.success) {
+                    document.getElementById('login-error').textContent = result.message;
+                    document.getElementById('login-error').style.display = 'block';
+                    return;
+                }
+
+                currentStudentId = result.student.id;
+                currentStudent = result.student;
+                localStorage.setItem('studentId', currentStudentId);
+
+                showDashboard();
+                
+            } catch (error) {
+                document.getElementById('login-error').textContent = 'Login failed: ' + error.message;
+                document.getElementById('login-error').style.display = 'block';
+            }
+        });
+
+        // Show/hide sections
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+            // Show selected section
+            document.getElementById(sectionId).style.display = 'block';
+            // Update tab active state
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Load data for the section
+            switch(sectionId) {
+                case 'dashboard': loadDashboard(); break;
+                case 'matches': loadMatches(); break;
+                case 'requests': loadRequests(); break;
+                case 'groups': loadGroups(); break;
+                case 'students': loadAllStudents(); break;
+            }
+        }
+
+        // Register student
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const student = {
+                name: document.getElementById('name').value,
+                password: document.getElementById('password').value,
+                course: document.getElementById('course').value,
+                topics: document.getElementById('topics').value || null,
+                availability: document.getElementById('availability').value || null,
+                telegram_id: document.getElementById('telegram_id').value || null
+            };
+
+            try {
+                const result = await apiCall('/api/students', {
+                    method: 'POST',
+                    body: JSON.stringify(student)
+                });
+
+                currentStudentId = result.id;
+                currentStudent = result;
+                localStorage.setItem('studentId', currentStudentId);
+
+                showDashboard();
+                alert('Registration successful! Welcome to Study Group Matcher!');
+
+            } catch (error) {
+                alert('Registration failed: ' + error.message);
+            }
+        });
+
+        // Show dashboard after login
+        async function showDashboard() {
+            document.getElementById('registration').style.display = 'none';
+            document.getElementById('navigation').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'block';
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.tab-btn').classList.add('active');
+            
+            await loadDashboard();
+        }
+
+        // Load dashboard
+        async function loadDashboard() {
+            try {
+                // Load student profile
+                currentStudent = await apiCall(`/api/students/${currentStudentId}`);
+                document.getElementById('student-profile').innerHTML = `
+                    <h3>${currentStudent.name}</h3>
+                    <div class="profile-details">
+                        <p><strong>Course:</strong> ${currentStudent.course}</p>
+                        <p><strong>Topics:</strong> ${currentStudent.topics || 'Not specified'}</p>
+                        <p><strong>Availability:</strong> ${currentStudent.availability || 'Not specified'}</p>
+                        <p><strong>Matches Accepted:</strong> ${currentStudent.matches_accepted || 0}</p>
+                        <p><strong>Groups Joined:</strong> ${currentStudent.groups_joined || 0}</p>
+                    </div>
+                `;
+
+                // Load stats
+                const stats = await apiCall('/api/stats');
+                document.getElementById('stat-students').textContent = stats.total_students;
+                document.getElementById('stat-groups').textContent = stats.total_groups;
+                document.getElementById('stat-requests').textContent = stats.pending_requests;
+
+                // Update request badge
+                const requests = await apiCall(`/api/students/${currentStudentId}/requests`);
+                if (requests.length > 0) {
+                    const badge = document.getElementById('request-count');
+                    badge.textContent = requests.length;
+                    badge.style.display = 'inline';
+                }
+
+            } catch (error) {
+                console.error('Failed to load dashboard:', error);
+            }
+        }
+
+        // Load matches
+        async function loadMatches() {
+            try {
+                const matches = await apiCall(`/api/students/${currentStudentId}/matches`);
+                const matchesList = document.getElementById('matches-list');
+                
+                if (matches.length === 0) {
+                    matchesList.innerHTML = '<p class="empty-state">No matches found yet. Keep checking back or browse all students!</p>';
+                    return;
+                }
+
+                matchesList.innerHTML = matches.map(match => `
+                    <div class="match-card">
+                        <div class="match-header">
+                            <h3>${match.name}</h3>
+                            <span class="score-badge">${match.score}%</span>
+                        </div>
+                        <div class="match-details">
+                            <p><strong>Course:</strong> ${match.course}</p>
+                            ${match.topics ? `<p><strong>Topics:</strong> ${match.topics}</p>` : ''}
+                            ${match.common_topics ? `<p><strong>Common Topics:</strong> ${match.common_topics}</p>` : ''}
+                            ${match.common_availability ? `<p><strong>Common Days:</strong> ${match.common_availability}</p>` : ''}
+                        </div>
+                        <button onclick="sendRequest(${match.id})" class="btn-success">Send Match Request</button>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Failed to load matches:', error);
+                alert('Failed to load matches: ' + error.message);
+            }
+        }
+
+        // Send match request
+        window.sendRequest = async (toStudentId) => {
+            try {
+                await apiCall(`/api/match-requests?student_id=${currentStudentId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ to_student_id: toStudentId }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                alert('✅ Match request sent successfully!');
+                loadMatches();
+                loadRequests();
+            } catch (error) {
+                alert('Failed to send request: ' + error.message);
+            }
+        };
+
+        // Load requests
+        async function loadRequests() {
+            try {
+                const requests = await apiCall(`/api/students/${currentStudentId}/requests`);
+                const requestsList = document.getElementById('requests-list');
+                
+                if (requests.length === 0) {
+                    requestsList.innerHTML = '<p class="empty-state">No pending match requests. When someone sends you a request, it will appear here!</p>';
+                    return;
+                }
+
+                requestsList.innerHTML = requests.map(req => `
+                    <div class="request-card">
+                        <div class="request-header">
+                            <h3>${req.from_student.name}</h3>
+                            <span class="status-badge pending">Pending</span>
+                        </div>
+                        <div class="request-details">
+                            <p><strong>Course:</strong> ${req.from_student.course}</p>
+                            ${req.from_student.topics ? `<p><strong>Topics:</strong> ${req.from_student.topics}</p>` : ''}
+                        </div>
+                        <div class="request-actions">
+                            <button onclick="respondToRequest(${req.id}, 'accept')" class="btn-success">Accept</button>
+                            <button onclick="respondToRequest(${req.id}, 'reject')" class="btn-danger">Reject</button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Failed to load requests:', error);
+                alert('Failed to load requests: ' + error.message);
+            }
+        }
+
+        // Respond to request
+        window.respondToRequest = async (requestId, action) => {
+            try {
+                await apiCall(`/api/match-requests/${requestId}/${action}`, {
+                    method: 'PUT'
+                });
+                
+                const message = action === 'accept' 
+                    ? '✅ Request accepted! A study group has been created.' 
+                    : '❌ Request rejected.';
+                alert(message);
+                loadRequests();
+                loadGroups();
+            } catch (error) {
+                alert('Failed to respond: ' + error.message);
+            }
+        };
+
+        // Load groups
+        async function loadGroups() {
+            try {
+                const groups = await apiCall(`/api/students/${currentStudentId}/groups`);
+                const groupsList = document.getElementById('groups-list');
+                
+                if (!groups || groups.length === 0) {
+                    groupsList.innerHTML = '<p class="empty-state">No study groups yet. Accept a match request to form a group!</p>';
+                    return;
+                }
+
+                groupsList.innerHTML = groups.map(group => `
+                    <div class="group-card">
+                        <h3>${group.name}</h3>
+                        <p><strong>Course:</strong> ${group.course}</p>
+                        <p><strong>Members:</strong> ${(group.members || []).map(m => m.name).join(', ')}</p>
+                        <p><strong>Created:</strong> ${new Date(group.created_at).toLocaleDateString()}</p>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Failed to load groups:', error);
+                alert('Failed to load groups: ' + error.message);
+            }
+        }
+
+        // Load all students
+        async function loadAllStudents() {
+            try {
+                const students = await apiCall('/api/students');
+                displayStudents(students.filter(s => s.id !== currentStudentId));
+            } catch (error) {
+                console.error('Failed to load students:', error);
+            }
+        }
+
+        // Search students
+        window.searchStudents = async () => {
+            const course = document.getElementById('search-course').value;
+            try {
+                const students = await apiCall(`/api/students/search?course=${course}`);
+                displayStudents(students.filter(s => s.id !== currentStudentId));
+            } catch (error) {
+                console.error('Failed to search students:', error);
+            }
+        };
+
+        // Display students
+        function displayStudents(students) {
+            const studentsList = document.getElementById('students-list');
+            
+            if (students.length === 0) {
+                studentsList.innerHTML = '<p class="empty-state">No students found. Try a different search or register more students!</p>';
+                return;
+            }
+
+            studentsList.innerHTML = students.map(student => `
+                <div class="student-card">
+                    <h3>${student.name}</h3>
+                    <p><strong>Course:</strong> ${student.course}</p>
+                    ${student.topics ? `<p><strong>Topics:</strong> ${student.topics}</p>` : ''}
+                    ${student.availability ? `<p><strong>Available:</strong> ${student.availability}</p>` : ''}
+                    <button onclick="sendRequest(${student.id})" class="btn-primary">Send Match Request</button>
+                </div>
+            `).join('');
+        }
+
+        // AI Chat
+        document.getElementById('chat-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const input = document.getElementById('chat-input');
+            const question = input.value.trim();
+            if (!question) return;
+
+            // Add user message
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML += `<div class="user-message"><strong>You:</strong> ${question}</div>`;
+            input.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const response = await apiCall('/api/ai/ask', {
+                    method: 'POST',
+                    body: JSON.stringify({ question })
+                });
+
+                chatMessages.innerHTML += `<div class="ai-message"><strong>AI:</strong> ${response.answer}</div>`;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            } catch (error) {
+                chatMessages.innerHTML += `<div class="error-message"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        });
+
+        // Logout
+        window.logout = () => {
+            localStorage.removeItem('studentId');
+            currentStudentId = null;
+            currentStudent = null;
+            document.getElementById('navigation').style.display = 'none';
+            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+            document.getElementById('registration').style.display = 'block';
+            document.getElementById('registerForm').reset();
+        };
+
+        // Check for existing student on page load
+        window.addEventListener('load', async () => {
+            const savedId = localStorage.getItem('studentId');
+            if (savedId) {
+                currentStudentId = parseInt(savedId);
+                try {
+                    currentStudent = await apiCall(`/api/students/${currentStudentId}`);
+                    showDashboard();
+                } catch (error) {
+                    localStorage.removeItem('studentId');
+                    document.getElementById('registration').style.display = 'block';
+                }
+            } else {
+                document.getElementById('registration').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
