@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Study Group Matcher
 
 A smart matching platform that connects university students based on courses, topics, and availability to form effective study groups.
@@ -425,3 +426,7 @@ MIT License
 ## Contributing
 
 Contributions are welcome! Please open issues and submit pull requests for any improvements or bug fixes.
+=======
+# se-toolkit-hackathon
+123
+>>>>>>> e4304e79a316704918c269c10c4ee8cf65105c1d
