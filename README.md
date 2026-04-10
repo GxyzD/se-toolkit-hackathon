@@ -5,6 +5,11 @@ A smart matching platform that connects university students based on courses, to
 
 ## Product Context
 
+### Demo
+![Family Shopping List Screenshot1](https://github.com/GxyzD/se-toolkit-hackathon/blob/341468b6361c2bb44599e4c46642ad893e8fa51b/assets/screenshots/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202026-04-11%20002324.png)
+![Family Shopping List Screenshot2](https://github.com/GxyzD/se-toolkit-hackathon/blob/341468b6361c2bb44599e4c46642ad893e8fa51b/assets/screenshots/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202026-04-11%20002411.png)
+![Family Shopping List Screenshot3](https://github.com/GxyzD/se-toolkit-hackathon/blob/341468b6361c2bb44599e4c46642ad893e8fa51b/assets/screenshots/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202026-04-11%20002550.png)
+
 ### End Users
 
 University students (undergraduate and graduate) who are looking for study partners to collaborate with on coursework, exam preparation, and group projects.
