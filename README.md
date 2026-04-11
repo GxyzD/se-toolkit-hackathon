@@ -43,7 +43,6 @@ The platform uses a smart scoring algorithm (0-100 points) to rank compatibility
 - **Match Request System** - Send, accept, or reject match requests
 - **Automatic Study Groups** - Groups form when both students accept a match
 - **AI Assistant** - Powered by Qwen via OpenRouter for study tips and platform help
-- **Telegram Bot Integration** - Commands: `/start`, `/mymatches`, `/mygroups`, `/accept`, `/reject`, `/help`
 - **Interactive Dashboard** - View stats, profile, matches, requests, and groups
 - **Student Browsing** - Search and filter students by course
 - **Swagger/OpenAPI Documentation** - Full interactive API docs at `/docs`
